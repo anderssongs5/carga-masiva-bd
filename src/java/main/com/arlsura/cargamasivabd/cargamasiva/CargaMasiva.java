@@ -42,10 +42,6 @@ public class CargaMasiva {
         LOG.info("Inició! - " + (new Date()).toString());
 
         this.cargarConfiguracion();
-        // this.filePath =
-        // "C:/Users/Andersson/Desktop/Temporales/RUA250RMRP20160121NI000800256161CO014-28.TXT";;
-//        this.filePath = "C:/Users/Andersson/Desktop/Temporales/RUA250RNRA20160121NI000800256161CO014-28.TXT";
-//        ;
 
         try {
             Class.forName(driver);
