@@ -52,46 +52,15 @@ public class CargaMasiva {
 
             this.query = this.construirQuery();
             LOG.info("Query: " + this.query);
-//            String sql = "LOAD DATA LOCAL INFILE '" + this.filePath
-//                    + "' INTO TABLE TAFI_RUAF_CARGA_MAESTRO FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' "
-//                    + "(DSTIPO_ARCHIVO, DSTIPO_ID_AFILIADO, DSNUMERO_ID_AFILIADO, DSGENERO, FENACIMIENTO, "
-//                    + "DSPRIMER_APELLIDO, @DSSEGUNDO_APELLIDO, DSPRIMER_NOMBRE, @DSSEGUNDO_NOMBRE, FEAFILIACION, "
-//                    + "CDADMINISTRADORA, CDTIPO_COTIZANTE, CDACTIVIDAD_ECONOMICA, DSTIPO_ID_APORTANTE, "
-//                    + "DSNUMERO_ID_APORTANTE, DSDIGITO_VER_APORTANTE, DSRAZON_SOCIAL_APORTANTE, CDCLASE_APORTANTE, "
-//                    + "CDOCUPACION_AFILIADO, CDDEPARTAMENTO, CDMUNICIPIO, CDALDIA, @CDSUBTIPO_COTIZANTE, @CDMODALIDAD) "
-//                    + "SET " + "DSSEGUNDO_APELLIDO = NULLIF(@DSSEGUNDO_APELLIDO, ''), "
-//                    + "DSSEGUNDO_NOMBRE = NULLIF(@DSSEGUNDO_NOMBRE, ''), "
-//                    + "CDSUBTIPO_COTIZANTE = NULLIF(@CDSUBTIPO_COTIZANTE, ''), "
-//                    + "CDMODALIDAD = NULLIF(@CDMODALIDAD,'')";
-            // this.query = "LOAD DATA LOCAL INFILE '" + this.filePath
-            // + "' INTO TABLE TAFI_RUAF_CARGA_RETIROS FIELDS TERMINATED BY ','
-            // LINES TERMINATED BY '\n' "
-            // + "(DSTIPO_ARCHIVO, CDADMINISTRADORA, DSTIPO_ID_AFILIADO,
-            // DSNUMERO_ID_AFILIADO, DSPRIMER_APELLIDO, "
-            // + "@DSSEGUNDO_APELLIDO, DSPRIMER_NOMBRE, @DSSEGUNDO_NOMBRE,
-            // DSNOVEDAD, DSTIPO_ID_APORTANTE, "
-            // + "DSNUMERO_ID_APORTANTE, DSDIGITO_VER_APORTANTE,
-            // FEDESVINCULACION, FERETIRO, CDCAUSA_RETIRO, "
-            // + "@FERECONOCIMIENTO, @FEFALLECIMIENTO, @CAMPO1, @CAMPO2,
-            // @CAMPO3, @CAMPO4, @CAMPO5, @CAMPO6, @CAMPO7) "
-            // + "SET " + "DSSEGUNDO_APELLIDO = NULLIF(@DSSEGUNDO_APELLIDO,''),"
-            // + "DSSEGUNDO_NOMBRE = NULLIF(@DSSEGUNDO_NOMBRE,''),"
-            // + "FERECONOCIMIENTO = NULLIF(@FERECONOCIMIENTO,''),"
-            // + "FEFALLECIMIENTO = NULLIF(@FEFALLECIMIENTO,'')," + "CAMPO1 =
-            // NULLIF(@CAMPO1,''),"
-            // + "CAMPO2 = NULLIF(@CAMPO2,'')," + "CAMPO3 = NULLIF(@CAMPO3,''),"
-            // + "CAMPO4 = NULLIF(@CAMPO4,''),"
-            // + "CAMPO5 = NULLIF(@CAMPO5,'')," + "CAMPO6 = NULLIF(@CAMPO6,''),"
-            // + "CAMPO7 = NULLIF(@CAMPO7,'')";
 
             LOG.info("Inicio de ejecución de carga masiva: " + (new Date()).toString());
-             statement.executeUpdate(query);
+            statement.executeUpdate(query);
             LOG.info("Fin de ejecución de carga masiva: " + (new Date()).toString());
 
         } catch (ClassNotFoundException e) {
             LOG.error("Error inicializando driver.", e);
-             } catch (SQLException e) {
-             LOG.error("Error SQL.", e);
+        } catch (SQLException e) {
+            LOG.error("Error SQL.", e);
         } finally {
             if (statement != null) {
                 try {
@@ -157,8 +126,8 @@ public class CargaMasiva {
                 String nullField = (String) token.nextElement();
                 nullField = nullField.trim();
                 query = query.replace(nullField, AT + nullField);
-                query = query.concat(nullField).concat(" = NULLIF(").concat(AT).concat(nullField).
-                        concat(COMMA).concat(" ''), ");
+                query = query.concat(nullField).concat(" = NULLIF(").concat(AT).concat(nullField).concat(COMMA)
+                        .concat(" ''), ");
             }
         }
 
