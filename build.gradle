@@ -1,0 +1,51 @@
+println 'Inicio ejecucion proyecto'
+
+apply plugin: 'java'
+
+// Encoding con el que se compila
+[ compileJava, compileTestJava ]*.options*.encoding = 'ISO-8859-1'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+sourceSets{
+	main {
+		java {
+			srcDir 'src/java/main'
+		}
+		resources {
+			srcDir 'src/java/resources'
+		}
+	}
+}
+
+def libs = LIBS
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.38' // Conexión a MySQL BD
+	compile group: 'log4j', name: 'log4j', version: '1.2.17' 
+	
+	compile files(libs + '/librerias/ojdbc/ojdbc6.jar') // Conexión a Oracle BD
+}
+
+jar {
+	archiveName = "carga-masiva-bd.jar"
+	manifest {
+		def dateTime = new Date() 
+		attributes(
+			"Implementation-Title": "Carga Masiva BD",
+			"Main-Class": "com.arlsura.cargamasivabd",
+			"Creation-Date": dateTime.toTimestamp().toString(),
+			"Built-JDK": System.getProperty('java.version'),
+		)
+	}
+
+	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+compileJava.dependsOn(clean)
+jar.dependsOn(compileJava)
