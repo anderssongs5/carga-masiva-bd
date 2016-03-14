@@ -1,12 +1,19 @@
 package com.arlsura.cargamasivabd;
 
-import com.arlsura.cargamasivabd.cargamasiva.CargaMasiva;
+import java.io.IOException;
 
 public class Aplicacion {
 
-    public static void main(String args[]) {
-        CargaMasiva cargaMasiva = new CargaMasiva();
+    @SuppressWarnings("rawtypes")
+    private static CargaMasivaObservable cargaMasivaObservable;
 
-        cargaMasiva.cargarArchivoABd();
+    @SuppressWarnings("rawtypes")
+    public static void main(String args[]) throws IOException {
+        cargaMasivaObservable = new CargaMasivaObservable();
+
+        // RUA250RMRP20160121NI000800256161CO014-28.TXT
+        // CargaMaestro.txt
+        cargaMasivaObservable.cargar(1,
+                "C:/Users/Andersson/Desktop/Temporales/RUA250RMRP20160121NI000800256161CO014-28.TXT");
     }
 }

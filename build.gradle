@@ -27,7 +27,11 @@ repositories {
 
 dependencies {
 	compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.38' // Conexión a MySQL BD
-	compile group: 'log4j', name: 'log4j', version: '1.2.17' 
+	compile group: 'log4j', name: 'log4j', version: '1.2.17' // Logging
+	compile group: 'com.jolbox', name:'bonecp', version:'0.8.0.RELEASE' // Pool de conexiones BoneCP
+	compile group: 'com.zaxxer', name: 'HikariCP', version:'2.4.4' // Pool de conexiones HikariCP
+	
+	compile group:'io.reactivex', name:'rxjava', version: '1.0.14' // Libreria para programacion reactiva
 	
 	compile files(libs + '/librerias/ojdbc/ojdbc6.jar') // Conexión a Oracle BD
 }

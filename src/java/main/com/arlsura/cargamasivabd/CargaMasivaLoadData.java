@@ -1,4 +1,4 @@
-package com.arlsura.cargamasivabd.cargamasiva;
+package com.arlsura.cargamasivabd;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -9,12 +9,18 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
-public class CargaMasiva {
+import com.arlsura.cargamasivabd.util.Ambiente;
+import com.arlsura.cargamasivabd.util.Util;
 
-    private final String DRIVER_PROP = "dbdriver";
-    private final String URL_PROP = "dburl";
-    private final String USER_PROP = "dbuser";
-    private final String PASSWORD_PROP = "dbpassword";
+/*
+ * Clase donde se realiza la carga masiva usando LAOD DATA INFILE. 
+ * La carga masiva se realiza desde un archivo local y no uno que esté en 
+ * el servidor de base de datos. Inicialmente, esta carga solo funciona para
+ * el motor MySQL. Se probó en Oracle y no se ejecutó correctamente.
+ */
+public class CargaMasivaLoadData {
+
+    private final String configuracion = "config.properties";
     private final String TABLE_PROP = "table";
     private final String FIELD_SEPARATOR_PROP = "fieldSeparator";
     private final String LINE_SEPARATOR_PROP = "lineSeparator";
@@ -23,7 +29,7 @@ public class CargaMasiva {
     private final String FILE_FULL_PATH_PROP = "fileFullPaht";
     private final String COMMA = ",";
     private final String AT = "@";
-    private static final Logger LOG = Logger.getLogger(CargaMasiva.class);
+    private static final Logger LOG = Logger.getLogger(CargaMasivaLoadData.class);
     private String query;
     private String driver;
     private String url;
@@ -84,19 +90,21 @@ public class CargaMasiva {
 
     private void cargarConfiguracion() {
         LOG.info("Cargando parámetros de configuración de base de datos");
-        Util.cargarConfiguraciones();
+        Util u = new Util();
 
-        this.driver = Util.obtenerValorConf(DRIVER_PROP);
-        this.url = Util.obtenerValorConf(URL_PROP);
-        this.user = Util.obtenerValorConf(USER_PROP);
-        this.password = Util.obtenerValorConf(PASSWORD_PROP);
+        u.cargarConfiguraciones(configuracion);
 
-        this.table = Util.obtenerValorConf(TABLE_PROP);
-        this.fieldSeparator = Util.obtenerValorConf(FIELD_SEPARATOR_PROP);
-        this.lineSeparator = Util.obtenerValorConf(LINE_SEPARATOR_PROP);
-        this.fields = Util.obtenerValorConf(FIELDS_PROP);
-        this.nullFields = Util.obtenerValorConf(NULL_FIELDS_PROP);
-        this.filePath = Util.obtenerValorConf(FILE_FULL_PATH_PROP);
+        this.driver = u.obtenerValorPropiedad(Ambiente.DRIVER_PROP);
+        this.url = u.obtenerValorPropiedad(Ambiente.URL_PROP);
+        this.user = u.obtenerValorPropiedad(Ambiente.USER_PROP);
+        this.password = u.obtenerValorPropiedad(Ambiente.PASSWORD_PROP);
+
+        this.table = u.obtenerValorPropiedad(TABLE_PROP);
+        this.fieldSeparator = u.obtenerValorPropiedad(FIELD_SEPARATOR_PROP);
+        this.lineSeparator = u.obtenerValorPropiedad(LINE_SEPARATOR_PROP);
+        this.fields = u.obtenerValorPropiedad(FIELDS_PROP);
+        this.nullFields = u.obtenerValorPropiedad(NULL_FIELDS_PROP);
+        this.filePath = u.obtenerValorPropiedad(FILE_FULL_PATH_PROP);
     }
 
     private String construirQuery() {
