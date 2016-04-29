@@ -171,6 +171,8 @@ public class CargaMasivaObservable<T> {
             TafiRuafCargaMaestro m = new TafiRuafCargaMaestro();
             String[] campos = lineas.get(i).split(",", -1);
 
+            m.setLineaCompleta(lineas.get(i));
+
             String dsTipoArchivo = campos[0];
             m.setDstipo_archivo(dsTipoArchivo.trim());
 
@@ -257,6 +259,8 @@ public class CargaMasivaObservable<T> {
         for (int i = 0; i < lineas.size(); i++) {
             TafiRuafCargaRetiros r = new TafiRuafCargaRetiros();
             String[] campos = lineas.get(i).split(",", -1);
+
+            r.setLineaCompleta(lineas.get(i));
 
             String dsTipoArchivo = campos[0];
             r.setDstipo_archivo(dsTipoArchivo.trim());
@@ -378,6 +382,7 @@ public class CargaMasivaObservable<T> {
             statement.close();
             connection.close();
         } catch (SQLException e) {
+            LOG.error("No se ha podido insertar el registro" + maestro.getLineaCompleta());
             LOG.error("Error insertando registro", e);
         }
         // System.out.println(Thread.currentThread().getName() + " : " +
@@ -425,6 +430,7 @@ public class CargaMasivaObservable<T> {
             statement.close();
             connection.close();
         } catch (SQLException e) {
+            LOG.error("No se ha podido insertar el registro" + retiro.getLineaCompleta());
             LOG.error("Error insertando registro", e);
         }
         // System.out.println(Thread.currentThread().getName() + " : " +

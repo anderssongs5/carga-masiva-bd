@@ -2,6 +2,7 @@ package com.arlsura.cargamasivabd.modelo;
 
 public class TafiRuafCargaRetiros {
 
+    private String lineaCompleta;
     private String dstipo_archivo;
     private String cdadministradora;
     private String dstipo_id_afiliado;
@@ -26,6 +27,14 @@ public class TafiRuafCargaRetiros {
     private String campo5;
     private String campo6;
     private String campo7;
+
+    public String getLineaCompleta() {
+        return lineaCompleta;
+    }
+
+    public void setLineaCompleta(String lineaCompleta) {
+        this.lineaCompleta = lineaCompleta;
+    }
 
     public String getDstipo_archivo() {
         return dstipo_archivo;

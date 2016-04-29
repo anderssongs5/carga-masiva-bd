@@ -1,8 +1,8 @@
 package com.arlsura.cargamasivabd.modelo;
 
-//400000
 public class TafiRuafCargaMaestro {
 
+    private String lineaCompleta;
     private String dstipo_archivo;
     private String dstipo_id_afiliado;
     private String dsnumero_id_afiliado;
@@ -27,6 +27,14 @@ public class TafiRuafCargaMaestro {
     private String cdaldia;
     private String cdsubtipo_cotizante;
     private String cdmodalidad;
+
+    public String getLineaCompleta() {
+        return lineaCompleta;
+    }
+
+    public void setLineaCompleta(String lineaCompleta) {
+        this.lineaCompleta = lineaCompleta;
+    }
 
     public String getDstipo_archivo() {
         return dstipo_archivo;
