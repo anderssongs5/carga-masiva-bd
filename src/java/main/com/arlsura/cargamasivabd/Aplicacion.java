@@ -6,15 +6,15 @@ public class Aplicacion {
 
     @SuppressWarnings("rawtypes")
     public static void main(String args[]) throws IOException {
-        CargaMasivaObservable cargaMasivaObservable = new CargaMasivaObservable();
+        String user = args[0];
+        String pass = args[1];
+        String server = args[2];
+        String port = args[3];
+        String instance = args[4];
+        
+        CargaMasivaObservable cargaMasivaObservable = new CargaMasivaObservable(user, pass, 
+                server, port, instance);
 
-        // RUA250RMRP20160121NI000800256161CO014-28.TXT
-        // CargaMaestro.txt
-        // cargaMasivaObservable.cargar(1,
-        // "C:/Users/Andersson/Desktop/Temporales/RUA250RMRP20160121NI000800256161CO014-28.TXT");
-
-        // RUA250RNRA20160121NI000800256161CO014-28.TXT
-        // CargaRetiros.txt
-        cargaMasivaObservable.cargar(2, "C:/Users/Andersson/Desktop/Temporales/RUA250RNRA20160121NI000800256161CO014-28.TXT");
+        cargaMasivaObservable.cargar(3, "D:/RUAF/AfiliadosRUAF.txt");
     }
 }

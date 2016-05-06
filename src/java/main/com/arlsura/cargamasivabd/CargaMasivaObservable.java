@@ -2,6 +2,9 @@ package com.arlsura.cargamasivabd;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -9,10 +12,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.log4j.Logger;
 
 import com.arlsura.cargamasivabd.hikaricp.AplicacionBDITConfig;
+import com.arlsura.cargamasivabd.modelo.TafiAfiliadosRuaf;
 import com.arlsura.cargamasivabd.modelo.TafiRuafCargaMaestro;
 import com.arlsura.cargamasivabd.modelo.TafiRuafCargaRetiros;
 import com.arlsura.cargamasivabd.util.Util;
@@ -26,6 +35,7 @@ public class CargaMasivaObservable<T> {
     private static final int MAXIMO_PROCESO = 3000;
     private static final int TAFI_RUAF_CARGA_MAESTRO = 1;
     private static final int TAFI_RUAF_CARGA_RETIROS = 2;
+    private static final int TAFI_AFILIADOS_RUAF = 3;
     private static final Logger LOG = Logger.getLogger(CargaMasivaObservable.class);
     private static int empezar = 0;
     private static int procesados = 0;
@@ -36,9 +46,34 @@ public class CargaMasivaObservable<T> {
     private Util util = new Util();
     private List<TafiRuafCargaMaestro> lineasInsertarTafiRuafCargaMaestro;
     private List<TafiRuafCargaRetiros> lineasInsertarTafiRuafCargaRetiros;
+    private List<TafiAfiliadosRuaf> lineasInsertarTafiAfiliadosRuaf;
+    private Executor executor;
+    
+    private String user; 
+    private String pass; 
+    private String server;
+    private String port;
+    private String instance;
 
-    public CargaMasivaObservable() {
+    public CargaMasivaObservable(String user, String pass, 
+            String server, String port, String instance) {
         super();
+        
+        this.user = user;
+        this.pass = pass;
+        this.server = server;
+        this.port = port;
+        this.instance = instance;
+
+        executor = Executors.newFixedThreadPool(100, new ThreadFactory() {
+
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
     }
 
     public void cargar(int opcionProcesa, String rutaArchivo) throws IOException {
@@ -46,7 +81,7 @@ public class CargaMasivaObservable<T> {
         empezar = 0;
         procesados = 0;
         LOG.info("Inicio lectura archivo: " + (new Date()).toString());
-        lineas = util.leerArchivo(new File(rutaArchivo));
+        //lineas = util.leerArchivo(new File(rutaArchivo));
         LOG.info("Fin lectura archivo: " + (new Date()).toString());
 
         switch (opcionProcesa) {
@@ -62,14 +97,96 @@ public class CargaMasivaObservable<T> {
             cantidadProcesar = lineasInsertarTafiRuafCargaRetiros.size();
             this.procesarRetiros();
             break;
+        case TAFI_AFILIADOS_RUAF:
+            LOG.info("Procesando líneas para TAFI_AFILIADOS_RUAF");
+            Stream<String> stream = Files.lines(Paths.get(rutaArchivo), StandardCharsets.ISO_8859_1);
+            lineasInsertarTafiAfiliadosRuaf = stream.map(this::mapearAfiliados).collect(Collectors.toList());
+            //lineasInsertarTafiAfiliadosRuaf = this.obtenerListaTafiAfiliadosRuaf();
+            cantidadProcesar = lineasInsertarTafiAfiliadosRuaf.size();
+            this.procesarAfiliados();
+            break;
         default:
             LOG.info("No existe nada para procesar");
             break;
         }
     }
 
+    private TafiAfiliadosRuaf mapearAfiliados(String linea){
+        TafiAfiliadosRuaf a = new TafiAfiliadosRuaf();
+        String[] campos = linea.split(",", -1);
+
+        String cdTipoDocumentoAfiliado = campos[0];
+        a.setCdtipo_documento_afiliado(cdTipoDocumentoAfiliado.trim());
+
+        String dniAfiliado = campos[1];
+        a.setDni_afiliado(dniAfiliado.trim());
+
+        String dsSexo = campos[2];
+        a.setDssexo(dsSexo.trim());
+
+        String fechaNacimiento = campos[3];
+        a.setFecha_nacimiento(fechaNacimiento.trim());
+
+        String dsPrimerApellido = campos[4];
+        a.setDsapellido1(dsPrimerApellido.trim());
+
+        String dsSegundoApellido = campos[5];
+        a.setDsapellido2(!dsSegundoApellido.trim().isEmpty() ? dsSegundoApellido.trim() : null);
+
+        String dsPrimerNombre = campos[6];
+        a.setDsnombre1(dsPrimerNombre.trim());
+
+        String dsSegundoNombre = campos[7];
+        a.setDsnombre2(!dsSegundoNombre.trim().isEmpty() ? dsSegundoNombre.trim() : null);
+
+        String fechaAfiliacion = campos[8];
+        a.setFecha_afiliacion(fechaAfiliacion.trim());
+
+        String cdEntidad = campos[9];
+        a.setCdentidad(cdEntidad.trim());
+
+        String dsEntidad = campos[10];
+        a.setDsentidad(dsEntidad.trim());
+
+        String cdTipoCotizante = campos[11];
+        a.setCdtipo_cotizante(!cdTipoCotizante.trim().isEmpty() ? cdTipoCotizante.trim() : null);
+
+        String nmEstado = campos[12];
+        a.setNmestado(!nmEstado.trim().isEmpty() ? nmEstado.trim() : null);
+
+        String cdDepartamento = campos[13];
+        a.setCddepartamento(!cdDepartamento.trim().isEmpty() ? cdDepartamento.trim() : null);
+
+        String cdMunicipio = campos[14];
+        a.setCdmunicipio(!cdMunicipio.trim().isEmpty() ? cdMunicipio.trim() : null);
+
+        String cdTipoDocumentoEmpleador = campos[15];
+        a.setCdtipo_documento_empleador(
+                !cdTipoDocumentoEmpleador.trim().isEmpty() ? cdTipoDocumentoEmpleador.trim() : null);
+
+        String dniEmpleador = campos[16];
+        a.setDni_empleador(!dniEmpleador.trim().isEmpty() ? dniEmpleador.trim() : null);
+
+        String nmDigitoVerificacion = campos[17];
+        a.setNmdigito_verificacion(!nmDigitoVerificacion.trim().isEmpty() ? nmDigitoVerificacion.trim() : null);
+
+        String nmDatosBasicos = campos[18];
+        a.setNmdatos_basicos(!nmDatosBasicos.trim().isEmpty() ? nmDatosBasicos.trim() : null);
+
+        String nmAldia = campos[19];
+        a.setNmal_dia(!nmAldia.trim().isEmpty() ? nmAldia.trim() : null);
+
+        a.setCdnovedad(null);
+
+        a.setDsregistro(null);
+
+        a.setSnprocesado("N");
+        
+        return a;
+    }
+
     private void procesarRetiros() {
-        hikariDataSource = AplicacionBDITConfig.dataSource();
+        hikariDataSource = AplicacionBDITConfig.dataSource(server, port, instance, user, pass);
 
         int p = this.procesarRetirosObservable(lineasInsertarTafiRuafCargaRetiros, empezar);
         procesados = procesados + p;
@@ -101,10 +218,10 @@ public class CargaMasivaObservable<T> {
         }
 
         latch = new CountDownLatch(porProcesar.size());
-        Observable<TafiRuafCargaRetiros> observable = Observable.from(porProcesar).subscribeOn(Schedulers.io());
+        Observable<TafiRuafCargaRetiros> observable = Observable.from(porProcesar);
         ;
 
-        observable.doOnNext(t -> Observable.just(t).observeOn(Schedulers.io())
+        observable.doOnNext(t -> Observable.just(t).observeOn(Schedulers.from(executor))
                 .doOnNext(this::insertarTafiRuafCargaRetiros).doOnCompleted(() -> latch.countDown()).subscribe())
                 .subscribe();
         try {
@@ -117,7 +234,7 @@ public class CargaMasivaObservable<T> {
     }
 
     private void procesarMaestro() {
-        hikariDataSource = AplicacionBDITConfig.dataSource();
+        hikariDataSource = AplicacionBDITConfig.dataSource(server, port, instance, user, pass);
 
         int p = this.procesarMaestroObservable(lineasInsertarTafiRuafCargaMaestro, empezar);
         procesados = procesados + p;
@@ -149,16 +266,65 @@ public class CargaMasivaObservable<T> {
         }
 
         latch = new CountDownLatch(porProcesar.size());
-        Observable<TafiRuafCargaMaestro> observable = Observable.from(porProcesar).subscribeOn(Schedulers.io());
+        Observable<TafiRuafCargaMaestro> observable = Observable.from(porProcesar);
         ;
 
-        observable.doOnNext(t -> Observable.just(t).observeOn(Schedulers.io())
+        observable.doOnNext(t -> Observable.just(t).observeOn(Schedulers.from(executor))
                 .doOnNext(this::insertarTafiRuafCargaMaestro).doOnCompleted(() -> latch.countDown()).subscribe())
                 .subscribe();
         try {
             latch.await();
         } catch (InterruptedException e) {
             LOG.error("Error esperando a que asíncronamente termine el procesamiento: procesarMaestro", e);
+        }
+
+        return procesados;
+    }
+
+    private void procesarAfiliados() {
+        hikariDataSource = AplicacionBDITConfig.dataSource(server, port, instance, user, pass);
+
+        int p = this.procesarAfiliadosObservable(lineasInsertarTafiAfiliadosRuaf, empezar);
+        procesados = procesados + p;
+        empezar = procesados;
+        cantidadProcesar = cantidadProcesar - p;
+
+        hikariDataSource.close();
+
+        LOG.info("Procesados: " + (lineasInsertarTafiAfiliadosRuaf.size() - cantidadProcesar));
+
+        if (cantidadProcesar > 0) {
+            procesarAfiliados();
+        } else {
+            LOG.info("Fin! - " + (new Date()).toString());
+        }
+    }
+
+    private int procesarAfiliadosObservable(List<TafiAfiliadosRuaf> afiliados, int desde) {
+        int hasta = desde + MAXIMO_PROCESO;
+        if (hasta > afiliados.size()) {
+            hasta = afiliados.size();
+        }
+
+        int procesados = hasta - desde;
+
+        List<TafiAfiliadosRuaf> porProcesar = new ArrayList<>();
+        for (int i = desde; i < hasta; i++) {
+            porProcesar.add(afiliados.get(i));
+        }
+
+        latch = new CountDownLatch(porProcesar.size());
+        Observable<TafiAfiliadosRuaf> observable = Observable.from(porProcesar);
+        ;
+
+        observable
+                .doOnNext(t -> Observable.just(t).observeOn(Schedulers.from(executor))
+                        .doOnNext(this::insertarTafiAfiliadosRuaf).doOnCompleted(() -> latch.countDown()).subscribe())
+                .subscribe();
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            LOG.error("Error esperando a que asíncronamente termine el procesamiento: procesarAfiliados", e);
         }
 
         return procesados;
@@ -341,6 +507,89 @@ public class CargaMasivaObservable<T> {
         return retiros;
     }
 
+    private List<TafiAfiliadosRuaf> obtenerListaTafiAfiliadosRuaf() {
+        LOG.info("Inicio armado lista TafiAfiliadosRuaf " + (new Date()).toString());
+        List<TafiAfiliadosRuaf> afiliados = new ArrayList<>();
+        for (int i = 0; i < lineas.size(); i++) {
+            TafiAfiliadosRuaf a = new TafiAfiliadosRuaf();
+            String[] campos = lineas.get(i).split(",", -1);
+
+            a.setLineaCompleta(lineas.get(i));
+
+            String cdTipoDocumentoAfiliado = campos[0];
+            a.setCdtipo_documento_afiliado(cdTipoDocumentoAfiliado.trim());
+
+            String dniAfiliado = campos[1];
+            a.setDni_afiliado(dniAfiliado.trim());
+
+            String dsSexo = campos[2];
+            a.setDssexo(dsSexo.trim());
+
+            String fechaNacimiento = campos[3];
+            a.setFecha_nacimiento(fechaNacimiento.trim());
+
+            String dsPrimerApellido = campos[4];
+            a.setDsapellido1(dsPrimerApellido.trim());
+
+            String dsSegundoApellido = campos[5];
+            a.setDsapellido2(!dsSegundoApellido.trim().isEmpty() ? dsSegundoApellido.trim() : null);
+
+            String dsPrimerNombre = campos[6];
+            a.setDsnombre1(dsPrimerNombre.trim());
+
+            String dsSegundoNombre = campos[7];
+            a.setDsnombre2(!dsSegundoNombre.trim().isEmpty() ? dsSegundoNombre.trim() : null);
+
+            String fechaAfiliacion = campos[8];
+            a.setFecha_afiliacion(fechaAfiliacion.trim());
+
+            String cdEntidad = campos[9];
+            a.setCdentidad(cdEntidad.trim());
+
+            String dsEntidad = campos[10];
+            a.setDsentidad(dsEntidad.trim());
+
+            String cdTipoCotizante = campos[11];
+            a.setCdtipo_cotizante(!cdTipoCotizante.trim().isEmpty() ? cdTipoCotizante.trim() : null);
+
+            String nmEstado = campos[12];
+            a.setNmestado(!nmEstado.trim().isEmpty() ? nmEstado.trim() : null);
+
+            String cdDepartamento = campos[13];
+            a.setCddepartamento(!cdDepartamento.trim().isEmpty() ? cdDepartamento.trim() : null);
+
+            String cdMunicipio = campos[14];
+            a.setCdmunicipio(!cdMunicipio.trim().isEmpty() ? cdMunicipio.trim() : null);
+
+            String cdTipoDocumentoEmpleador = campos[15];
+            a.setCdtipo_documento_empleador(
+                    !cdTipoDocumentoEmpleador.trim().isEmpty() ? cdTipoDocumentoEmpleador.trim() : null);
+
+            String dniEmpleador = campos[16];
+            a.setDni_empleador(!dniEmpleador.trim().isEmpty() ? dniEmpleador.trim() : null);
+
+            String nmDigitoVerificacion = campos[17];
+            a.setNmdigito_verificacion(!nmDigitoVerificacion.trim().isEmpty() ? nmDigitoVerificacion.trim() : null);
+
+            String nmDatosBasicos = campos[18];
+            a.setNmdatos_basicos(!nmDatosBasicos.trim().isEmpty() ? nmDatosBasicos.trim() : null);
+
+            String nmAldia = campos[19];
+            a.setNmal_dia(!nmAldia.trim().isEmpty() ? nmAldia.trim() : null);
+
+            a.setCdnovedad(null);
+
+            a.setDsregistro(null);
+
+            a.setSnprocesado("N");
+
+            afiliados.add(a);
+        }
+        LOG.info("Fin armado lista TafiRuafCargaRetiros " + (new Date()).toString());
+
+        return afiliados;
+    }
+
     private void insertarTafiRuafCargaMaestro(TafiRuafCargaMaestro maestro) {
         try {
             Connection connection = hikariDataSource.getConnection();
@@ -435,5 +684,91 @@ public class CargaMasivaObservable<T> {
         }
         // System.out.println(Thread.currentThread().getName() + " : " +
         // i.toString());
+    }
+
+    private void insertarTafiAfiliadosRuaf(TafiAfiliadosRuaf afiliado) {
+        try {
+            Connection connection = hikariDataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO TAFI_AFILIADOS_RUAF "
+                    + "(CDTIPO_DOCUMENTO_AFILIADO, DNI_AFILIADO, DSSEXO, FECHA_NACIMIENTO, DSAPELLIDO1, "
+                    + "DSAPELLIDO2, DSNOMBRE1, DSNOMBRE2, FECHA_AFILIACION, CDENTIDAD, DSENTIDAD, "
+                    + "CDTIPO_COTIZANTE, NMESTADO, CDDEPARTAMENTO, CDMUNICIPIO, CDTIPO_DOCUMENTO_EMPLEADOR, "
+                    + "DNI_EMPLEADOR, NMDIGITO_VERIFICACION, NMDATOS_BASICOS, NMAL_DIA, CDNOVEDAD, "
+                    + "DSREGISTRO, SNPROCESADO) " + "VALUES "
+                    + "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+            statement.setString(1, afiliado.getCdtipo_documento_afiliado());
+            statement.setString(2, afiliado.getDni_afiliado());
+            statement.setString(3, afiliado.getDssexo());
+            statement.setString(4, afiliado.getFecha_nacimiento());
+            statement.setString(5, afiliado.getDsapellido1());
+            statement.setString(6, afiliado.getDsapellido2());
+            statement.setString(7, afiliado.getDsnombre1());
+            statement.setString(8, afiliado.getDsnombre2());
+            statement.setString(9, afiliado.getFecha_afiliacion());
+            statement.setString(10, afiliado.getCdentidad());
+            statement.setString(11, afiliado.getDsentidad());
+            statement.setString(12, afiliado.getCdtipo_cotizante());
+            statement.setString(13, afiliado.getNmestado());
+            statement.setString(14, afiliado.getCddepartamento());
+            statement.setString(15, afiliado.getCdmunicipio());
+            statement.setString(16, afiliado.getCdtipo_documento_empleador());
+            statement.setString(17, afiliado.getDni_empleador());
+            statement.setString(18, afiliado.getNmdigito_verificacion());
+            statement.setString(19, afiliado.getNmdatos_basicos());
+            statement.setString(20, afiliado.getNmal_dia());
+            statement.setString(21, afiliado.getCdnovedad());
+            statement.setString(22, afiliado.getDsregistro());
+            statement.setString(23, afiliado.getSnprocesado());
+
+            statement.executeUpdate();
+
+            statement.close();
+            connection.close();
+        } catch (SQLException e) {
+            LOG.error("No se ha podido insertar el registro" + afiliado.getLineaCompleta());
+            LOG.error("Error insertando registro", e);
+        }
+        // System.out.println(Thread.currentThread().getName());
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getPass() {
+        return pass;
+    }
+
+    public void setPass(String pass) {
+        this.pass = pass;
+    }
+
+    public String getServer() {
+        return server;
+    }
+
+    public void setServer(String server) {
+        this.server = server;
+    }
+
+    public String getPort() {
+        return port;
+    }
+
+    public void setPort(String port) {
+        this.port = port;
+    }
+
+    public String getInstance() {
+        return instance;
+    }
+
+    public void setInstance(String instance) {
+        this.instance = instance;
     }
 }
