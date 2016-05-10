@@ -42,7 +42,7 @@ jar {
 		def dateTime = new Date() 
 		attributes(
 			"Implementation-Title": "Carga Masiva BD",
-			"Main-Class": "com.arlsura.cargamasivabd",
+			"Main-Class": "com.arlsura.cargamasivabd.Aplicacion",
 			"Creation-Date": dateTime.toTimestamp().toString(),
 			"Built-JDK": System.getProperty('java.version'),
 		)
