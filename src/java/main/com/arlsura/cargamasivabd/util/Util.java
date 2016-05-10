@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import org.apache.log4j.Logger;
 
@@ -23,11 +25,13 @@ public class Util {
         propiedades = new Properties();
         InputStream inputStream = null;
 
-        inputStream = Util.class.getClassLoader().getResourceAsStream(archivoPropiedades);
+        inputStream = Util.class.getClassLoader().getResourceAsStream(
+                archivoPropiedades);
         try {
             propiedades.load(inputStream);
         } catch (IOException e) {
-            LOG.error("Error cargando archivo de propiedades." + archivoPropiedades, e);
+            LOG.error("Error cargando archivo de propiedades."
+                    + archivoPropiedades, e);
         } finally {
             if (inputStream != null) {
                 try {
@@ -44,6 +48,12 @@ public class Util {
     }
 
     public List<String> leerArchivo(File archivo) throws IOException {
-        return Files.readAllLines(archivo.toPath(), StandardCharsets.ISO_8859_1);
+        return Files
+                .readAllLines(archivo.toPath(), StandardCharsets.ISO_8859_1);
+    }
+
+    public Stream<String> leerLineasAsStream(String directorio)
+            throws IOException {
+        return Files.lines(Paths.get(directorio), StandardCharsets.ISO_8859_1);
     }
 }
